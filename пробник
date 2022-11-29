@@ -1,0 +1,42 @@
+import json
+
+import requests
+import telebot
+
+
+TOKEN = '5976186629:AAEu0HcyYVCTwtWGvuBYS7l7Q_aQ_-jj_rE'
+
+bot = telebot.TeleBot(TOKEN)
+
+keys = {
+    'доллар': 'usd',
+    'рубль': 'ru',
+    'евро': 'eur',
+}
+
+@bot.message_handler(commands=['start','help'])
+def help(message: telebot.types.Message):
+    text = 'Чтобы начать работу введите команду боту в следующем формате:\n<имя валюты> \
+<в какую валюту перевести> \
+<колличество переводимой валюты>\nУвидеть список всех доступных валют: /values'
+    bot.reply_to(message, text)
+
+
+@bot.message_handler(commands=['values'])
+def values(message: telebot.types.Message):
+    text = 'Доступные валюты:'
+    for key in keys.keys():
+        text = '\n'.join((text,key, ))
+    bot.reply_to(message, text)
+
+@bot.message_handler(content_types=['text'])
+def convert(message: telebot.types.Message):
+    base, query, amount = message.text.split(' ')
+
+    url = f'https://api.exchangerate.host/convert?from={base}&to={query}&amount={amount}'
+    response = requests.get(url)
+    data = response.json()
+    new_price = data['result']
+
+    bot.reply_to(message, f'Цена {amount} {base} в {query} : {new_price}')
+bot.polling(none_stop=True)
